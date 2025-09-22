@@ -3,22 +3,22 @@ import { StatusCodes } from 'http-status-codes';
 import { SimpleReporter } from '../simple-reporter';
 import data from '../data/data.json';
 
-describe('Echo validation', () => { 
+describe('Echo validation', () => {
   const p = pactum;
-  const rep = SimpleReporter; // setar o reporter para preencher o relatório
-  const baseUrl = 'https://www.themealdb.com/api/json/v1/1/filter.php?a=Canadian'; // url da api
+  const rep = SimpleReporter;
+  const baseUrl = 'https://httpbin.org';
 
-  p.request.setDefaultTimeout(30000); // tempo de espera de resposta do teste
+  p.request.setDefaultTimeout(30000);
 
-  beforeAll(() => p.reporter.add(rep)); // precisar dar o add e o end para escrever o relatório
+  beforeAll(() => p.reporter.add(rep));
   afterAll(() => p.reporter.end());
 
   describe('Verifying endpoints using POST method', () => {
-    it('Should return the same data as the json sent', async () => { // async e await pq vai esperar resposta da api
+    it('Should return the same data as the json sent', async () => {
       await p
-        .spec() // "vou fazer uma requisição"
+        .spec()
         .post(`${baseUrl}/anything`)
-        .withJson(data.sucesso) // json corpo da requisição
+        .withJson(data.sucesso)
         .expectStatus(StatusCodes.OK)
         .expectJsonLike({
           json: {
