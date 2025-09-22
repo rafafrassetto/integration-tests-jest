@@ -6,7 +6,7 @@ import data from '../data/data.json';
 describe('Echo validation', () => { 
   const p = pactum;
   const rep = SimpleReporter; // setar o reporter para preencher o relatório
-  const baseUrl = 'https://httpbin.org'; // url da api
+  const baseUrl = 'https://www.themealdb.com/api/json/v1/1/filter.php?a=Canadian'; // url da api
 
   p.request.setDefaultTimeout(30000); // tempo de espera de resposta do teste
 
