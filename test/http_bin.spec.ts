@@ -3,22 +3,22 @@ import { StatusCodes } from 'http-status-codes';
 import { SimpleReporter } from '../simple-reporter';
 import data from '../data/data.json';
 
-describe('Echo validation', () => {
+describe('Echo validation', () => { 
   const p = pactum;
-  const rep = SimpleReporter;
-  const baseUrl = 'https://httpbin.org';
+  const rep = SimpleReporter; // setar o reporter para preencher o relatório
+  const baseUrl = 'https://httpbin.org'; // url da api
 
-  p.request.setDefaultTimeout(30000);
+  p.request.setDefaultTimeout(30000); // tempo de espera de resposta do teste
 
-  beforeAll(() => p.reporter.add(rep));
+  beforeAll(() => p.reporter.add(rep)); // precisar dar o add e o end para escrever o relatório
   afterAll(() => p.reporter.end());
 
   describe('Verifying endpoints using POST method', () => {
-    it('Should return the same data as the json sent', async () => {
+    it('Should return the same data as the json sent', async () => { // async e await pq vai esperar resposta da api
       await p
-        .spec()
+        .spec() // "vou fazer uma requisição"
         .post(`${baseUrl}/anything`)
-        .withJson(data.sucesso)
+        .withJson(data.sucesso) // json corpo da requisição
         .expectStatus(StatusCodes.OK)
         .expectJsonLike({
           json: {
