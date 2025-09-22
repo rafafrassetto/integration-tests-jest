@@ -3,101 +3,98 @@ import { faker } from '@faker-js/faker';
 import { StatusCodes } from 'http-status-codes';
 import { SimpleReporter } from '../simple-reporter';
 
-describe('JSONPlaceholder API Tests', () => {
-  const p = pactum;
-  const rep = SimpleReporter;
-  const baseUrl = 'https://jsonplaceholder.typicode.com';
+const p = pactum;
+const rep = SimpleReporter;
+const baseUrl = 'https://reqres.in/api';
 
-  // Configurações iniciais do Pactum
+describe('Prova 02 - Testes de Integração na API ReqRes.in', () => {
   p.request.setDefaultTimeout(30000);
 
   beforeAll(() => p.reporter.add(rep));
   afterAll(() => p.reporter.end());
 
-  // Dados para o corpo das requisições POST e PUT
-  const newPostData = {
-    title: faker.lorem.sentence(),
-    body: faker.lorem.paragraph(),
-    userId: faker.number.int({ min: 1, max: 10 }),
-  };
+  describe('Criação de Usuário (POST)', () => {
+    it('Deve criar um novo usuário com sucesso', async () => {
+      const requestBody = {
+        name: faker.person.fullName(),
+        job: faker.person.jobTitle(),
+      };
 
-  const updatedPostData = {
-    id: 1,
-    title: `UPDATED: ${faker.lorem.sentence()}`,
-    body: `UPDATED: ${faker.lorem.paragraph()}`,
-    userId: 1,
-  };
-
-
-  describe('GET Endpoints', () => {
-    it('Should get a single post by ID', async () => {
       await p
         .spec()
-        .get(`${baseUrl}/posts/1`)
-        .expectStatus(StatusCodes.OK)
-        .expectJsonLike({
-          userId: 1,
-          id: 1,
-          title: 'sunt aut facere repellat provident occaecati excepturi optio reprehenderit'
-        });
-    });
-
-    it('Should get all posts', async () => {
-      await p
-        .spec()
-        .get(`${baseUrl}/posts`)
-        .expectStatus(StatusCodes.OK)
-        .expectJsonSchema({
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              userId: { type: 'number' },
-              id: { type: 'number' },
-              title: { type: 'string' },
-              body: { type: 'string' }
-            },
-            required: ['userId', 'id', 'title', 'body']
-          }
-        })
-        .expectJsonLength(100);
-    });
-  });
-
-
-  describe('POST Endpoint', () => {
-    it('Should create a new post', async () => {
-      await p
-        .spec()
-        .post(`${baseUrl}/posts`)
-        .withJson(newPostData)
+        .post(`${baseUrl}/users`)
+        .withJson(requestBody)
         .expectStatus(StatusCodes.CREATED)
         .expectJsonLike({
-          ...newPostData,
-          id: 101 // A API sempre retorna 101 para novos posts
+          name: requestBody.name,
+          job: requestBody.job,
+        })
+        .stores('UserID', 'id');
+    });
+  });
+
+  describe('Consulta de Usuários (GET)', () => {
+    it('Deve listar os usuários de uma página específica', async () => {
+      await p
+        .spec()
+        .get(`${baseUrl}/users`)
+        .withQueryParams('page', 2)
+        .expectStatus(StatusCodes.OK)
+        .expectJsonMatch({
+          page: 2,
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          data: (pactum as any).match.like([
+            {
+              id: 7,
+              email: 'michael.lawson@reqres.in',
+            },
+          ]),
+        });
+    });
+
+    it('Deve obter um usuário específico pelo ID', async () => {
+      await p
+        .spec()
+        .get(`${baseUrl}/users/2`)
+        .expectStatus(StatusCodes.OK)
+        .expectJsonLike({
+          data: {
+            id: 2,
+            email: 'janet.weaver@reqres.in',
+            first_name: 'Janet',
+          },
         });
     });
   });
 
+  describe('Atualização de Usuário (PUT)', () => {
+    it('Deve atualizar um usuário existente com sucesso', async () => {
+      const updatedBody = {
+        name: faker.person.fullName(),
+        job: 'Resident',
+      };
 
-  describe('PUT Endpoint', () => {
-    it('Should update an existing post', async () => {
       await p
         .spec()
-        .put(`${baseUrl}/posts/1`)
-        .withJson(updatedPostData)
+        .put(`${baseUrl}/users/{id}`)
+        .withPathParams('id', '$S{UserID}')
+        .withJson(updatedBody)
         .expectStatus(StatusCodes.OK)
-        .expectJson(updatedPostData);
+        .expectJsonLike({
+          name: updatedBody.name,
+          job: updatedBody.job,
+        });
     });
   });
 
-
-  describe('DELETE Endpoint', () => {
-    it('Should delete an existing post', async () => {
+  describe('Deleção de Usuário (DELETE)', () => {
+    it('Deve deletar um usuário com sucesso', async () => {
       await p
         .spec()
-        .delete(`${baseUrl}/posts/1`)
-        .expectStatus(StatusCodes.OK);
+        .delete(`${baseUrl}/users/{id}`)
+        .withPathParams('id', '$S{UserID}')
+        .expectStatus(StatusCodes.NO_CONTENT);
     });
   });
 });
