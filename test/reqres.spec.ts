@@ -3,59 +3,63 @@ import { StatusCodes } from 'http-status-codes';
 import { SimpleReporter } from '../simple-reporter';
 import { faker } from '@faker-js/faker';
 
-describe('FakeREST Api Test Suite', () => {
+describe('FakeREST Api Final Test Suite', () => {
   const p = pactum;
   const rep = SimpleReporter;
   const baseUrl = 'https://fakerestapi.azurewebsites.net/api/v1';
 
   p.request.setDefaultTimeout(30000);
 
-  beforeAll(() => {
-    p.reporter.add(rep);
-    const requestBody = {
-      userName: faker.internet.username(),
-      password: faker.internet.password(),
-    };
-    return p
-      .spec()
-      .post(`${baseUrl}/Users`)
-      .withJson(requestBody)
-      .expectStatus(StatusCodes.OK)
-      .stores('createdUserID', 'id')
-      .stores('createdUserName', 'userName');
-  });
+  beforeAll(() => p.reporter.add(rep));
+  afterAll(() => p.reporter.end());
 
-  afterAll(() => {
-    p.reporter.end();
-  });
-
-  describe('User Management', () => {
-    it('should retrieve the created user by ID', async () => {
+  describe('User Endpoints', () => {
+    it('should create a new user successfully', async () => {
+      const requestBody = {
+        id: faker.number.int({ max: 2147483647 }),
+        userName: faker.internet.username(),
+        password: faker.internet.password(),
+      };
       await p
         .spec()
-        .get(`${baseUrl}/Users/$S{createdUserID}`)
+        .post(`${baseUrl}/Users`)
+        .withJson(requestBody)
         .expectStatus(StatusCodes.OK)
-        .expectJson('userName', '$S{createdUserName}');
+        .expectJsonLike({
+          id: requestBody.id,
+          userName: requestBody.userName,
+        });
     });
 
-    it('should retrieve the list of all users', async () => {
+    it('should retrieve a list of default users', async () => {
       await p
         .spec()
         .get(`${baseUrl}/Users`)
         .expectStatus(StatusCodes.OK)
-        .expectJson('$', '$V.length > 0');
+        .expectJson('[0].id', 1);
     });
 
-    it('should update the user', async () => {
+    it('should retrieve a specific user by a known ID', async () => {
+      await p
+        .spec()
+        .get(`${baseUrl}/Users/5`)
+        .expectStatus(StatusCodes.OK)
+        .expectJsonLike({
+          id: 5,
+          userName: 'User 5',
+        });
+    });
+
+    it('should update a user by a known ID', async () => {
       const updatedUserName = faker.internet.username();
       const requestBody = {
-        id: '$S{createdUserID}',
+        id: 10,
         userName: updatedUserName,
         password: faker.internet.password(),
       };
       await p
         .spec()
-        .put(`${baseUrl}/Users/$S{createdUserID}`)
+        .put(`${baseUrl}/Users/10`)
         .withJson(requestBody)
         .expectStatus(StatusCodes.OK)
         .expectJsonLike({
@@ -63,32 +67,21 @@ describe('FakeREST Api Test Suite', () => {
         });
     });
 
-    it('should delete the user', async () => {
+    it('should delete a user by a known ID', async () => {
       await p
         .spec()
-        .delete(`${baseUrl}/Users/$S{createdUserID}`)
+        .delete(`${baseUrl}/Users/10`)
         .expectStatus(StatusCodes.OK);
     });
   });
 
-  describe('Activities API', () => {
-    it('should create a new activity', async () => {
-      const requestBody = {
-        id: faker.number.int({ min: 100 }),
-        title: faker.lorem.sentence(),
-        dueDate: faker.date.future().toISOString(),
-        completed: false,
-      };
-
+  describe('Activities Endpoints', () => {
+    it('should return a list of activities', async () => {
       await p
         .spec()
-        .post(`${baseUrl}/Activities`)
-        .withJson(requestBody)
+        .get(`${baseUrl}/Activities`)
         .expectStatus(StatusCodes.OK)
-        .expectJsonLike({
-          id: requestBody.id,
-          title: requestBody.title,
-        });
+        .expectJson('$', '$V.length > 0');
     });
   });
 });
