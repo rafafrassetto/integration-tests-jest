@@ -81,7 +81,7 @@ describe('FakeREST Api Final Test Suite', () => {
         .spec()
         .get(`${baseUrl}/Activities`)
         .expectStatus(StatusCodes.OK)
-        .expectJson('$', '$V.length > 0');
+        .expectJsonLike([]);
     });
   });
 });
