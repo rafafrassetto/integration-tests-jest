@@ -1,14 +1,12 @@
-// /test/reqres.spec.ts (VERSÃO CORRIGIDA)
-
 import pactum from 'pactum';
 import { StatusCodes } from 'http-status-codes';
-import { faker } from '@faker-js/faker';
 import { SimpleReporter } from '../simple-reporter';
+import { faker } from '@faker-js/faker';
 
-describe('Reqres API Test Suite', () => {
+describe('FakeREST Api Test Suite', () => {
   const p = pactum;
   const rep = SimpleReporter;
-  const baseUrl = 'https://reqres.in';
+  const baseUrl = 'https://fakerestapi.azurewebsites.net/api/v1';
 
   p.request.setDefaultTimeout(30000);
 
@@ -16,86 +14,86 @@ describe('Reqres API Test Suite', () => {
   afterAll(() => p.reporter.end());
 
   describe('User Management', () => {
-    it('Should create a new user', async () => {
+    const newUserName = faker.internet.userName();
+
+    it('should create a new user', async () => {
       const requestBody = {
-        name: faker.person.fullName(),
-        job: faker.person.jobTitle(),
+        id: faker.number.int({ min: 1000 }),
+        userName: newUserName,
+        password: faker.internet.password(),
+      };
+      await p
+        .spec()
+        .post(`${baseUrl}/Users`)
+        .withJson(requestBody)
+        .expectStatus(StatusCodes.OK)
+        .expectJsonLike({
+          id: requestBody.id,
+          userName: newUserName,
+        })
+        .stores('createdUserID', 'id');
+    });
+
+    it('should retrieve the created user', async () => {
+      await p
+        .spec()
+        .get(`${baseUrl}/Users/$S{createdUserID}`)
+        .expectStatus(StatusCodes.OK)
+        .expectJsonLike({
+          userName: newUserName,
+        });
+    });
+
+    it('should update the user', async () => {
+      const updatedUserName = faker.internet.userName();
+      const requestBody = {
+        id: '$S{createdUserID}',
+        userName: updatedUserName,
+        password: faker.internet.password(),
       };
 
       await p
         .spec()
-        .post(`${baseUrl}/api/users`)
+        .put(`${baseUrl}/Users/$S{createdUserID}`)
         .withJson(requestBody)
-        .expectStatus(StatusCodes.CREATED)
-        .expectJsonLike({
-          name: requestBody.name,
-          job: requestBody.job,
-        })
-        .stores('createdUserId', 'id');
-    });
-
-    it('Should get a single user by ID', async () => {
-      await p
-        .spec()
-        .get(`${baseUrl}/api/users/2`)
         .expectStatus(StatusCodes.OK)
         .expectJsonLike({
-          data: {
-            id: 2,
-            first_name: 'Janet',
-          },
+          userName: updatedUserName,
         });
     });
 
-    it('Should get a list of users', async () => {
+    it('should delete the user', async () => {
       await p
         .spec()
-        .get(`${baseUrl}/api/users?page=2`)
-        .expectStatus(StatusCodes.OK)
-        // VERIFICAÇÃO CORRIGIDA:
-        // Apenas valida que a página é a 2 e que o array 'data' não está vazio.
-        .expectJsonLike({
-          page: 2,
-        })
-        .expectJson('data', '$V.length > 0');
-    });
-
-    it('Should update an existing user using PUT', async () => {
-      const updatedJob = faker.person.jobTitle();
-      
-      await p
-        .spec()
-        .put(`${baseUrl}/api/users/$S{createdUserId}`)
-        .withJson({
-          job: updatedJob,
-        })
-        .expectStatus(StatusCodes.OK)
-        .expectJsonLike({
-          job: updatedJob,
-        });
-    });
-    
-    it('Should delete a user', async () => {
-      await p
-        .spec()
-        .delete(`${baseUrl}/api/users/$S{createdUserId}`)
-        .expectStatus(StatusCodes.NO_CONTENT);
+        .delete(`${baseUrl}/Users/$S{createdUserID}`)
+        .expectStatus(StatusCodes.OK);
     });
   });
-  
-  describe('Authentication', () => {
-    it('Should return an error for unsuccessful login (missing password)', async () => {
+
+  describe('Activities Management', () => {
+    it('should retrieve a list of activities', async () => {
       await p
         .spec()
-        .post(`${baseUrl}/api/login`)
-        .withJson({
-          email: 'peter@klaven'
-        })
-        .expectStatus(StatusCodes.BAD_REQUEST)
-        // VERIFICAÇÃO CORRIGIDA:
-        // Trocado para expectJsonLike para ser mais flexível.
+        .get(`${baseUrl}/Activities`)
+        .expectStatus(StatusCodes.OK)
+        .expectJson('$', '$V.length > 0');
+    });
+
+    it('should create a new activity', async () => {
+      const requestBody = {
+        id: faker.number.int({ min: 100 }),
+        title: faker.lorem.sentence(),
+        dueDate: faker.date.future(),
+        completed: false,
+      };
+
+      await p
+        .spec()
+        .post(`${baseUrl}/Activities`)
+        .withJson(requestBody)
+        .expectStatus(StatusCodes.OK)
         .expectJsonLike({
-          error: 'Missing password'
+          title: requestBody.title,
         });
     });
   });
