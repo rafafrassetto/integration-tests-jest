@@ -10,48 +10,49 @@ describe('FakeREST Api Test Suite', () => {
 
   p.request.setDefaultTimeout(30000);
 
-  beforeAll(() => p.reporter.add(rep));
-  afterAll(() => p.reporter.end());
+  beforeAll(() => {
+    p.reporter.add(rep);
+    const requestBody = {
+      userName: faker.internet.username(),
+      password: faker.internet.password(),
+    };
+    return p
+      .spec()
+      .post(`${baseUrl}/Users`)
+      .withJson(requestBody)
+      .expectStatus(StatusCodes.OK)
+      .stores('createdUserID', 'id')
+      .stores('createdUserName', 'userName');
+  });
+
+  afterAll(() => {
+    p.reporter.end();
+  });
 
   describe('User Management', () => {
-    const newUserName = faker.internet.userName();
-
-    it('should create a new user', async () => {
-      const requestBody = {
-        id: faker.number.int({ min: 1000 }),
-        userName: newUserName,
-        password: faker.internet.password(),
-      };
-      await p
-        .spec()
-        .post(`${baseUrl}/Users`)
-        .withJson(requestBody)
-        .expectStatus(StatusCodes.OK)
-        .expectJsonLike({
-          id: requestBody.id,
-          userName: newUserName,
-        })
-        .stores('createdUserID', 'id');
-    });
-
-    it('should retrieve the created user', async () => {
+    it('should retrieve the created user by ID', async () => {
       await p
         .spec()
         .get(`${baseUrl}/Users/$S{createdUserID}`)
         .expectStatus(StatusCodes.OK)
-        .expectJsonLike({
-          userName: newUserName,
-        });
+        .expectJson('userName', '$S{createdUserName}');
+    });
+
+    it('should retrieve the list of all users', async () => {
+      await p
+        .spec()
+        .get(`${baseUrl}/Users`)
+        .expectStatus(StatusCodes.OK)
+        .expectJson('$', '$V.length > 0');
     });
 
     it('should update the user', async () => {
-      const updatedUserName = faker.internet.userName();
+      const updatedUserName = faker.internet.username();
       const requestBody = {
         id: '$S{createdUserID}',
         userName: updatedUserName,
         password: faker.internet.password(),
       };
-
       await p
         .spec()
         .put(`${baseUrl}/Users/$S{createdUserID}`)
@@ -70,20 +71,12 @@ describe('FakeREST Api Test Suite', () => {
     });
   });
 
-  describe('Activities Management', () => {
-    it('should retrieve a list of activities', async () => {
-      await p
-        .spec()
-        .get(`${baseUrl}/Activities`)
-        .expectStatus(StatusCodes.OK)
-        .expectJson('$', '$V.length > 0');
-    });
-
+  describe('Activities API', () => {
     it('should create a new activity', async () => {
       const requestBody = {
         id: faker.number.int({ min: 100 }),
         title: faker.lorem.sentence(),
-        dueDate: faker.date.future(),
+        dueDate: faker.date.future().toISOString(),
         completed: false,
       };
 
@@ -93,6 +86,7 @@ describe('FakeREST Api Test Suite', () => {
         .withJson(requestBody)
         .expectStatus(StatusCodes.OK)
         .expectJsonLike({
+          id: requestBody.id,
           title: requestBody.title,
         });
     });
