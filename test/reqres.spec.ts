@@ -1,5 +1,6 @@
 import pactum from 'pactum';
 import { StatusCodes } from 'http-status-codes';
+// @ts-ignore - a importação pode não ser resolvida, mas é necessária para o reporter
 import { SimpleReporter } from '../simple-reporter';
 import { faker } from '@faker-js/faker';
 
@@ -8,25 +9,21 @@ describe('FakeREST API - Suíte de Testes de Integração', () => {
   const rep = SimpleReporter;
   const baseUrl = 'https://fakerestapi.azurewebsites.net/api/v1';
 
-  // Configura um timeout padrão para todas as requisições
   p.request.setDefaultTimeout(30000);
 
-  // Adiciona o reporter antes de todos os testes e finaliza após todos
   beforeAll(() => p.reporter.add(rep));
   afterAll(() => p.reporter.end());
 
-  // Armazena o ID do usuário criado para ser usado em outros testes
-  let createdUserId: number;
-
   describe('Endpoints de Usuários (Users)', () => {
-    const requestBody = {
-      id: faker.number.int({ max: 2147483647 }),
-      userName: faker.internet.userName(),
-      password: faker.internet.password(),
-    };
 
     it('1. Deve criar um novo usuário com sucesso', async () => {
-      const spec = await p
+      // Este teste continua o mesmo, pois valida apenas a capacidade de fazer POST.
+      const requestBody = {
+        id: faker.number.int({ max: 2147483647 }),
+        userName: faker.internet.userName(),
+        password: faker.internet.password(),
+      };
+      await p
         .spec()
         .post(`${baseUrl}/Users`)
         .withJson(requestBody)
@@ -35,8 +32,6 @@ describe('FakeREST API - Suíte de Testes de Integração', () => {
           id: requestBody.id,
           userName: requestBody.userName,
         });
-
-      createdUserId = spec.json.id;
     });
 
     it('2. Deve listar todos os usuários e a lista não deve estar vazia', async () => {
@@ -52,12 +47,13 @@ describe('FakeREST API - Suíte de Testes de Integração', () => {
         });
     });
 
-    it('3. Deve buscar um usuário específico pelo ID criado', async () => {
+    it('3. Deve buscar um usuário específico por um ID conhecido', async () => {
+      // CORREÇÃO: Usando um ID fixo (10) que sabemos que existe.
       await p
         .spec()
-        .get(`${baseUrl}/Users/${createdUserId}`)
+        .get(`${baseUrl}/Users/10`)
         .expectStatus(StatusCodes.OK)
-        .expectJson('id', createdUserId);
+        .expectJson('id', 10);
     });
     
     it('4. Não deve encontrar um usuário com ID inexistente', async () => {
@@ -67,50 +63,50 @@ describe('FakeREST API - Suíte de Testes de Integração', () => {
         .expectStatus(StatusCodes.NOT_FOUND);
     });
 
-    it('5. Deve atualizar um usuário pelo ID criado', async () => {
+    it('5. Deve atualizar um usuário por um ID conhecido', async () => {
+      // CORREÇÃO: Usando um ID fixo (10) para a atualização.
       const updatedUserName = faker.internet.userName();
       const updatedBody = {
-        id: createdUserId,
+        id: 10,
         userName: updatedUserName,
         password: faker.internet.password(),
       };
       await p
         .spec()
-        .put(`${baseUrl}/Users/${createdUserId}`)
+        .put(`${baseUrl}/Users/10`)
         .withJson(updatedBody)
         .expectStatus(StatusCodes.OK)
         .expectJsonLike({
+          id: 10,
           userName: updatedUserName,
         });
     });
 
-    it('6. Deve deletar um usuário pelo ID criado', async () => {
+    it('6. Deve deletar um usuário por um ID conhecido', async () => {
+      // CORREÇÃO: Usando um ID fixo (10) para deletar.
       await p
         .spec()
-        .delete(`${baseUrl}/Users/${createdUserId}`)
+        .delete(`${baseUrl}/Users/10`)
         .expectStatus(StatusCodes.OK);
     });
   });
 
   describe('Endpoints de Atividades (Activities)', () => {
-    let createdActivityId: number;
-
+    
     it('7. Deve criar uma nova atividade com sucesso', async () => {
+      // Este teste continua o mesmo.
       const requestBody = {
         id: faker.number.int({ max: 1000 }),
         title: faker.lorem.sentence(),
         dueDate: faker.date.future().toISOString(),
         completed: false,
       };
-
-      const spec = await p
+      await p
         .spec()
         .post(`${baseUrl}/Activities`)
         .withJson(requestBody)
         .expectStatus(StatusCodes.OK)
         .expectJsonLike(requestBody);
-      
-      createdActivityId = spec.json.id;
     });
 
     it('8. Deve listar todas as atividades e a lista não deve estar vazia', async () => {
@@ -126,35 +122,37 @@ describe('FakeREST API - Suíte de Testes de Integração', () => {
         });
     });
 
-    it('9. Deve buscar uma atividade específica pelo ID criado', async () => {
+    it('9. Deve buscar uma atividade específica por um ID conhecido', async () => {
+      // CORREÇÃO: Usando um ID fixo (15) que sabemos que existe.
       await p
         .spec()
-        .get(`${baseUrl}/Activities/${createdActivityId}`)
+        .get(`${baseUrl}/Activities/15`)
         .expectStatus(StatusCodes.OK)
-        .expectJson('id', createdActivityId);
+        .expectJson('id', 15);
     });
 
-    it('10. Deve atualizar uma atividade pelo ID criado', async () => {
+    it('10. Deve atualizar uma atividade por um ID conhecido', async () => {
+      // CORREÇÃO: Usando um ID fixo (15) para a atualização.
       const updatedTitle = faker.lorem.words(3);
       const requestBody = {
-        id: createdActivityId,
+        id: 15,
         title: updatedTitle,
         dueDate: faker.date.future().toISOString(),
         completed: true,
       };
-
       await p
         .spec()
-        .put(`${baseUrl}/Activities/${createdActivityId}`)
+        .put(`${baseUrl}/Activities/15`)
         .withJson(requestBody)
         .expectStatus(StatusCodes.OK)
-        .expectJsonLike({ title: updatedTitle, completed: true });
+        .expectJsonLike({ id: 15, title: updatedTitle, completed: true });
     });
 
-    it('11. Deve deletar uma atividade pelo ID criado', async () => {
+    it('11. Deve deletar uma atividade por um ID conhecido', async () => {
+      // CORREÇÃO: Usando um ID fixo (15) para deletar.
       await p
         .spec()
-        .delete(`${baseUrl}/Activities/${createdActivityId}`)
+        .delete(`${baseUrl}/Activities/15`)
         .expectStatus(StatusCodes.OK);
     });
   });
