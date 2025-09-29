@@ -1,6 +1,5 @@
 import pactum from 'pactum';
 import { StatusCodes } from 'http-status-codes';
-// @ts-ignore - a importação pode não ser resolvida, mas é necessária para o reporter
 import { SimpleReporter } from '../simple-reporter';
 import { faker } from '@faker-js/faker';
 
@@ -17,10 +16,9 @@ describe('FakeREST API - Suíte de Testes de Integração', () => {
   describe('Endpoints de Usuários (Users)', () => {
 
     it('1. Deve criar um novo usuário com sucesso', async () => {
-      // Este teste continua o mesmo, pois valida apenas a capacidade de fazer POST.
       const requestBody = {
         id: faker.number.int({ max: 2147483647 }),
-        userName: faker.internet.userName(),
+        userName: faker.internet.username(),
         password: faker.internet.password(),
       };
       await p
@@ -48,7 +46,6 @@ describe('FakeREST API - Suíte de Testes de Integração', () => {
     });
 
     it('3. Deve buscar um usuário específico por um ID conhecido', async () => {
-      // CORREÇÃO: Usando um ID fixo (10) que sabemos que existe.
       await p
         .spec()
         .get(`${baseUrl}/Users/10`)
@@ -64,8 +61,7 @@ describe('FakeREST API - Suíte de Testes de Integração', () => {
     });
 
     it('5. Deve atualizar um usuário por um ID conhecido', async () => {
-      // CORREÇÃO: Usando um ID fixo (10) para a atualização.
-      const updatedUserName = faker.internet.userName();
+      const updatedUserName = faker.internet.username();
       const updatedBody = {
         id: 10,
         userName: updatedUserName,
@@ -83,7 +79,6 @@ describe('FakeREST API - Suíte de Testes de Integração', () => {
     });
 
     it('6. Deve deletar um usuário por um ID conhecido', async () => {
-      // CORREÇÃO: Usando um ID fixo (10) para deletar.
       await p
         .spec()
         .delete(`${baseUrl}/Users/10`)
@@ -94,7 +89,6 @@ describe('FakeREST API - Suíte de Testes de Integração', () => {
   describe('Endpoints de Atividades (Activities)', () => {
     
     it('7. Deve criar uma nova atividade com sucesso', async () => {
-      // Este teste continua o mesmo.
       const requestBody = {
         id: faker.number.int({ max: 1000 }),
         title: faker.lorem.sentence(),
@@ -123,7 +117,6 @@ describe('FakeREST API - Suíte de Testes de Integração', () => {
     });
 
     it('9. Deve buscar uma atividade específica por um ID conhecido', async () => {
-      // CORREÇÃO: Usando um ID fixo (15) que sabemos que existe.
       await p
         .spec()
         .get(`${baseUrl}/Activities/15`)
@@ -132,7 +125,6 @@ describe('FakeREST API - Suíte de Testes de Integração', () => {
     });
 
     it('10. Deve atualizar uma atividade por um ID conhecido', async () => {
-      // CORREÇÃO: Usando um ID fixo (15) para a atualização.
       const updatedTitle = faker.lorem.words(3);
       const requestBody = {
         id: 15,
@@ -149,7 +141,6 @@ describe('FakeREST API - Suíte de Testes de Integração', () => {
     });
 
     it('11. Deve deletar uma atividade por um ID conhecido', async () => {
-      // CORREÇÃO: Usando um ID fixo (15) para deletar.
       await p
         .spec()
         .delete(`${baseUrl}/Activities/15`)
